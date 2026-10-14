@@ -1,0 +1,35 @@
+// ==UserScript==
+// @name         AcfunBlock开源代码New
+// @namespace    http://tampermonkey.net/
+// @version      3.064
+// @description  帮助你屏蔽不想看的UP主
+// @author       人文情怀
+// @exclude      https://www.acfun.cn/login/*
+// @exclude      http://www.acfun.cn/login/*
+// @match        http://www.acfun.cn/a/ac*
+// @match        http://www.acfun.cn/v/list*
+// @match        https://www.acfun.cn/a/ac*
+// @match        http://www.acfun.cn/*
+// @match        https://www.acfun.cn/*
+// @match        https://www.acfun.cn/v/list*
+// @match        http://www.acfun.cn/a/ac*
+// @match        https://www.acfun.cn/a/ac*
+// @match        http://www.acfun.cn/v/ac*
+// @match        https://www.acfun.cn/v/ac*
+// @match        https://www.acfun.cn/v/as*
+// @match        http://www.acfun.cn/v/as*
+// @connect      greasyfork.org
+// @grant        GM_getValue
+// @grant        GM_setValue
+// @grant        GM.getValue
+// @grant        GM.setValue
+// @grant        GM_deleteValue
+// @grant        GM.deleteValue
+// @grant        GM_xmlhttpRequest
+// @grant        GM.xmlHttpRequest
+// @grant        unsafeWindow
+// @run-at      document-idle
+// @license MIT
+// @downloadURL https://update.greasyfork.org/scripts/387296/AcfunBlock%E5%BC%80%E6%BA%90%E4%BB%A3%E7%A0%81.user.js
+// @updateURL https://update.greasyfork.org/scripts/387296/AcfunBlock%E5%BC%80%E6%BA%90%E4%BB%A3%E7%A0%81.meta.js
+// ==/UserScript==
