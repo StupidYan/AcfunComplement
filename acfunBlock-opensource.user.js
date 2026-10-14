@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         AcfunBlock开源代码
+// @name         AcfunBlock开源代码New
 // @namespace    http://tampermonkey.net/
-// @version      3.060
+// @version      3.064
 // @description  帮助你屏蔽不想看的UP主
 // @author       人文情怀
 // @exclude      https://www.acfun.cn/login/*
@@ -30,6 +30,8 @@
 // @grant        unsafeWindow
 // @run-at      document-idle
 // @license MIT
+// @downloadURL https://update.greasyfork.org/scripts/387296/AcfunBlock%E5%BC%80%E6%BA%90%E4%BB%A3%E7%A0%81.user.js
+// @updateURL https://update.greasyfork.org/scripts/387296/AcfunBlock%E5%BC%80%E6%BA%90%E4%BB%A3%E7%A0%81.meta.js
 // ==/UserScript==
 
 //3.044更新以后用到了 gif.js 所以直接引用了min版本在代码, 请看gifJob和gif_js变量
@@ -245,7 +247,7 @@
         function header() {
             return h();
         }
-        const version = "3.060";
+        const version = "3.064";
         let logFunc = console.log;
         let errorFunc = console.error;
         let warnFunc = console.warn;
@@ -520,6 +522,7 @@
                         callback(doc);
                     },
                     onerror: e => {
+                        downloadFailedSet.add(link);
                         log_log("下载页面失败：", link);
                     }
                 });
@@ -621,6 +624,7 @@
         }
         unsafeWindow.setInterval(pageDownloader, 100);
         let downloadCache = {};
+        let downloadFailedSet = new Set();
         const util = {
             removeTextNodes,
             getCurrentAcId,
@@ -630,7 +634,13 @@
             dbHelper,
             getCommentType() {
                 let c = window.document.querySelector(".mode-container");
+                if (c === null) {
+                    return "NEW";
+                }
                 let tag = c.querySelector(".active");
+                if (tag === null) {
+                    return "NEW";
+                }
                 let t = tag.getAttribute("data-usemode");
                 return t === "FLOOR" ? "OLD" : "NEW";
             },
@@ -792,6 +802,106 @@
         }
         function _updateReplyBanList(d, callback) {
             GM_set("ACFUN_BLOCK_REPLIERS", d, callback);
+        }
+        function _loadBanUidList_simple(callback) {
+            GM_get("ACFUN_BLOCK_LIST_UID", [], (val => {
+                callback(val);
+            }));
+        }
+        function _updateBanUidList(d, callback) {
+            GM_set("ACFUN_BLOCK_LIST_UID", d, callback);
+        }
+        function _banUid(uid, name, callback) {
+            _loadBanUidList_simple((list => {
+                let i = list.findIndex((x => x.id === uid));
+                if (i < 0) {
+                    list.push({
+                        id: uid,
+                        name
+                    });
+                    _updateBanUidList(list, (() => {
+                        empty(callback)(list);
+                    }));
+                } else {
+                    empty(callback)(list);
+                }
+            }));
+        }
+        function _unbanUidByName(name, callback) {
+            name = name.trim();
+            _loadBanUidList_simple((list => {
+                let newList = list.filter((x => x.name !== name));
+                if (newList.length !== list.length) {
+                    _updateBanUidList(newList, (() => {
+                        empty(callback)(newList);
+                    }));
+                } else {
+                    empty(callback)(newList);
+                }
+            }));
+        }
+        function _unbanUid(uid, callback) {
+            _loadBanUidList_simple((list => {
+                let i = list.findIndex((x => x.id === uid));
+                if (i >= 0) {
+                    list.splice(i, 1);
+                    _updateBanUidList(list, (() => {
+                        empty(callback)(list);
+                    }));
+                } else {
+                    empty(callback)(list);
+                }
+            }));
+        }
+        function _loadReplyUidList_simple(callback) {
+            GM_get("ACFUN_BLOCK_REPLIERS_UID", [], (val => {
+                callback(val);
+            }));
+        }
+        function _updateReplyUidList(d, callback) {
+            GM_set("ACFUN_BLOCK_REPLIERS_UID", d, callback);
+        }
+        function _banReplyUid(uid, name, callback) {
+            _loadReplyUidList_simple((list => {
+                let i = list.findIndex((x => x.id === uid));
+                if (i < 0) {
+                    list.push({
+                        id: uid,
+                        name
+                    });
+                    _updateReplyUidList(list, (() => {
+                        empty(callback)(list);
+                    }));
+                } else {
+                    empty(callback)(list);
+                }
+            }));
+        }
+        function _unbanReplyUidByName(name, callback) {
+            name = name.trim();
+            _loadReplyUidList_simple((list => {
+                let newList = list.filter((x => x.name !== name));
+                if (newList.length !== list.length) {
+                    _updateReplyUidList(newList, (() => {
+                        empty(callback)(newList);
+                    }));
+                } else {
+                    empty(callback)(newList);
+                }
+            }));
+        }
+        function _unbanReplyUid(uid, callback) {
+            _loadReplyUidList_simple((list => {
+                let i = list.findIndex((x => x.id === uid));
+                if (i >= 0) {
+                    list.splice(i, 1);
+                    _updateReplyUidList(list, (() => {
+                        empty(callback)(list);
+                    }));
+                } else {
+                    empty(callback)(list);
+                }
+            }));
         }
         __webpack_require__.g["usernameIDCache"] = null;
         function _getUsernameID(callback) {
@@ -1151,8 +1261,15 @@
                 }));
             },
             banUser: _banUser,
+            banUid: _banUid,
+            unbanUid: _unbanUid,
+            banReplyUid: _banReplyUid,
+            unbanReplyUid: _unbanReplyUid,
+            loadUpUidList: _loadBanUidList_simple,
+            loadReplyUidList: _loadReplyUidList_simple,
             unbanUser(username, callback) {
                 username = username.trim();
+                _unbanUidByName(username);
                 _loadBanList_simple((list => {
                     list = removeDuplicate(list);
                     let i = list.indexOf(username);
@@ -1185,6 +1302,7 @@
             banReplier: _banReplier,
             unbanReplier(username, callback) {
                 username = username.trim();
+                _unbanReplyUidByName(username);
                 _loadReplyBanList_simple((list => {
                     list = removeDuplicate(list);
                     let i = list.indexOf(username);
@@ -1266,7 +1384,8 @@
                 "www.acfun.cn/v/list70/index.htm": "科技",
                 "www.acfun.cn/v/list68/index.htm": "影视",
                 "www.acfun.cn/v/list69/index.htm": "体育",
-                "www.acfun.cn/v/list125/index.htm": "鱼塘"
+                "www.acfun.cn/v/list125/index.htm": "鱼塘",
+                "www.acfun.cn/v/list76/index.htm": "广而告之"
             };
             let dict2 = {
                 "www.acfun.cn/u/3216851": "中国日报",
@@ -3097,10 +3216,18 @@
             let banbutton = innerWrap.querySelector("#banUp");
             let unbanbutton = innerWrap.querySelector("#unbanUp");
             banbutton.addEventListener("click", (() => {
+                let uid = _getUpUid(doc);
+                if (uid) {
+                    js_data.banUid(uid, _getUsername(doc));
+                }
                 js_data.banUser(_getUsername(doc));
                 js_event.emit("UP_BAN_UPDATE", null);
             }));
             unbanbutton.addEventListener("click", (() => {
+                let uid = _getUpUid(doc);
+                if (uid) {
+                    js_data.unbanUid(uid);
+                }
                 js_data.unbanUser(_getUsername(doc));
                 js_event.emit("UP_BAN_UPDATE", null);
             }));
@@ -3148,11 +3275,14 @@
             let doc = contentPageUI_unsafeWindow.document;
             let username = _getUsername(doc);
             js_data.loadBanList((list => {
-                if (list.indexOf(username) >= 0) {
-                    showBannedUI();
-                } else {
-                    showNormalUI();
-                }
+                js_data.loadUpUidList((uidlist => {
+                    let uid = _getUpUid(doc);
+                    if (list.indexOf(username) >= 0 || uid && uidlist.indexOf(uid) >= 0) {
+                        showBannedUI();
+                    } else {
+                        showNormalUI();
+                    }
+                }));
             }));
         }
         function _getUsername(doc) {
@@ -3164,6 +3294,18 @@
                 updom = doc.querySelector(".up-name a");
             }
             return updom.innerText;
+        }
+        function _getUpUid(doc) {
+            let type = getPageType();
+            let updom;
+            if (type === "VIDEO") {
+                updom = doc.querySelector(".up-info .up-name a[href*='/u/']");
+            } else {
+                updom = doc.querySelector(".up-name a[href*='/u/']");
+            }
+            if (updom === null) return null;
+            let m = /\/u\/(\d+)/.exec(updom.getAttribute("href"));
+            return m === null ? null : m[1];
         }
         function contentPageUI_loadUI() {
             let doc = contentPageUI_unsafeWindow.document;
@@ -3187,6 +3329,7 @@
                 c["originalHeight"] = rect.height;
             }
             c.dom.style.height = c.originalHeight + "px";
+            c.dom.style.setProperty("border-bottom-width", "0", "important");
             c.dom.classList.add("smooth");
             setTimeout((() => {
                 c.dom.classList.add("banned-article");
@@ -3211,6 +3354,8 @@
         function showArticle(c) {
             c.dom.classList.remove("banned-article");
             c.dom.classList.remove("remove");
+            c.dom.style.height = "";
+            c.dom.style.removeProperty("border-bottom-width");
             c["hidden"] = false;
         }
         function _hideContent(c) {
@@ -3251,6 +3396,9 @@
             unblockA.classList.add("unban-replier-btn");
             unblockA.innerText = "取消屏蔽";
             unblockA.addEventListener("click", (() => {
+                if (c.uid) {
+                    js_data.unbanReplyUid(c.uid);
+                }
                 unbanReplier(c.username);
             }));
             infoDiv.appendChild(unblockA);
@@ -3271,28 +3419,31 @@
         }
         function refreshUserComments(comments) {
             js_data.loadReplyBanList((banlist => {
-                if (banlist !== null) {
-                    comments.forEach((c => {
-                        if (banlist.indexOf(c.username) >= 0) {
-                            if (c.dom.hasOwnProperty("bannedData")) {
-                                if (!c.dom["bannedData"].hidden) {
+                js_data.loadReplyUidList((uidlist => {
+                    if (banlist !== null) {
+                        comments.forEach((c => {
+                            let uidHit = c.uid && uidlist.indexOf(c.uid) >= 0;
+                            if (uidHit || banlist.indexOf(c.username) >= 0) {
+                                if (c.dom.hasOwnProperty("bannedData")) {
+                                    if (!c.dom["bannedData"].hidden) {
+                                        _hideSingleComment(c);
+                                    }
+                                } else {
                                     _hideSingleComment(c);
                                 }
                             } else {
-                                _hideSingleComment(c);
+                                _unhideSingleComment(c);
                             }
-                        } else {
-                            _unhideSingleComment(c);
-                        }
-                        js_data.loadGeneralSetting((setting => {
-                            if (!setting.disableAnimation) return;
-                            let tags = c.dom.querySelectorAll("*");
-                            tags.forEach((t => {
-                                t.style.animation = "";
+                            js_data.loadGeneralSetting((setting => {
+                                if (!setting.disableAnimation) return;
+                                let tags = c.dom.querySelectorAll("*");
+                                tags.forEach((t => {
+                                    t.style.animation = "";
+                                }));
                             }));
                         }));
-                    }));
-                }
+                    }
+                }));
             }));
         }
         let preloadKlistCache = [];
@@ -3369,7 +3520,10 @@
             let link = c.dom.querySelector("a").getAttribute("href");
             let regex = /\/a\/ac(\d+)/;
             let id = regex.exec(link)[1];
-            link = "https://m.acfun.cn/v?ac=" + id;
+            link = "https://www.acfun.cn/a/ac" + id;
+            if (downloadFailedSet.has(link)) {
+                return;
+            }
             util.dbHelper.load(link).then((value => {
                 if (typeof value === "undefined" || value === null) {
                     getAndSavePreloadCache(link, c);
@@ -3383,7 +3537,10 @@
                 let link = c.dom.querySelector("a").getAttribute("href");
                 let regex = /\/a\/ac(\d+)/;
                 let id = regex.exec(link)[1];
-                link = "https://m.acfun.cn/v?ac=" + id;
+                link = "https://www.acfun.cn/a/ac" + id;
+                if (downloadFailedSet.has(link)) {
+                    return;
+                }
                 util.dbHelper.load(link).then((value => {
                     if (typeof value === "undefined" || value === null) {
                         preloadTestContentListFiltered.push(c);
@@ -3405,46 +3562,51 @@
         }
         function refreshPageItems(contents) {
             js_data.loadBanList((blist => {
-                js_data.loadKeywords((klist => {
-                    let preloadTestList = [];
-                    contents.forEach((c => {
-                        let banned = false;
-                        if (blist && blist.indexOf && blist.indexOf(c.username) >= 0) {
-                            blist = blist.map((x => {
-                                if (typeof x === "object") {
-                                    return x.item;
-                                }
-                                return x;
-                            }));
-                            _hideContent(c);
-                            banned = true;
-                        }
-                        if (klist && klist.indexOf) {
-                            klist.forEach((keyword => {
-                                if (c.title.indexOf(keyword) >= 0) {
-                                    _hideContent(c);
-                                    banned = true;
-                                }
-                            }));
-                        }
-                        if (!banned) {
-                            _showContent(c);
-                            if (c.type === "ARTICLE") preloadTestList.push(c);
-                        }
-                    }));
-                    js_data.loadGeneralSetting((setting => {
-                        if (setting.usePreload) {
-                            log_log("预加载测试中。。。");
-                            preloadTest(preloadTestList, klist);
-                        } else {
-                            log_log("预加载已关闭");
-                        }
+                js_data.loadUpUidList((uidlist => {
+                    js_data.loadKeywords((klist => {
+                        let preloadTestList = [];
+                        contents.forEach((c => {
+                            let banned = false;
+                            if (c.uid && uidlist.indexOf(c.uid) >= 0 || blist && blist.indexOf && blist.indexOf(c.username) >= 0) {
+                                blist = blist.map((x => {
+                                    if (typeof x === "object") {
+                                        return x.item;
+                                    }
+                                    return x;
+                                }));
+                                _hideContent(c);
+                                banned = true;
+                            }
+                            if (klist && klist.indexOf) {
+                                klist.forEach((keyword => {
+                                    if (c.title.indexOf(keyword) >= 0) {
+                                        _hideContent(c);
+                                        banned = true;
+                                    }
+                                }));
+                            }
+                            if (!banned) {
+                                _showContent(c);
+                                if (c.type === "ARTICLE") preloadTestList.push(c);
+                            }
+                        }));
+                        js_data.loadGeneralSetting((setting => {
+                            if (setting.usePreload) {
+                                log_log("预加载测试中。。。");
+                                preloadTest(preloadTestList, klist);
+                            } else {
+                                log_log("预加载已关闭");
+                            }
+                        }));
                     }));
                 }));
             }));
         }
         function showCommentTags(content) {}
-        function _banReplyUser(username) {
+        function _banReplyUser(username, uid) {
+            if (uid) {
+                js_data.banReplyUid(uid, username);
+            }
             js_data.banReplier(username, (banlist => {
                 js_event.emit("REPLY_BAN_UPDATE", null);
             }));
@@ -3477,6 +3639,9 @@
             buttonDiv.addEventListener("click", (e => {
                 let c = banButtonObj.activeData;
                 let u = c.username;
+                if (c.uid) {
+                    js_data.banUid(c.uid, u);
+                }
                 js_data.banUser(u, (list => {
                     js_event.emit("UP_BAN_UPDATE", null);
                 }));
@@ -3581,11 +3746,11 @@
                 let type = util.getCommentType();
                 if (type === "NEW") {
                     attachBanCommentButtonNew(c, (() => {
-                        _banReplyUser(c.username);
+                        _banReplyUser(c.username, c.uid);
                     }));
                 } else {
                     attachBanCommentButtonOld(c, (() => {
-                        _banReplyUser(c.username);
+                        _banReplyUser(c.username, c.uid);
                     }));
                 }
             }
@@ -3767,6 +3932,12 @@
             }));
             return result;
         }
+        function _extractUid(dom) {
+            let a = dom.querySelector('a[href*="/u/"]');
+            if (a === null) return null;
+            let m = /\/u\/(\d+)/.exec(a.getAttribute("href"));
+            return m === null ? null : m[1];
+        }
         function getSliderVideos(doc) {
             let list = doc.querySelectorAll(".slider-small-item");
             let result = [];
@@ -3778,6 +3949,7 @@
                 result.push({
                     title,
                     username,
+                    uid: _extractUid(i),
                     dom: i,
                     type: "VIDEO"
                 });
@@ -3796,6 +3968,7 @@
                 result.push({
                     title,
                     username,
+                    uid: _extractUid(i),
                     dom: i,
                     type: "VIDEO"
                 });
@@ -3814,6 +3987,7 @@
                 result.push({
                     title,
                     username,
+                    uid: _extractUid(i),
                     dom: i,
                     type: "VIDEO"
                 });
@@ -3832,6 +4006,7 @@
                 result.push({
                     title,
                     username,
+                    uid: _extractUid(i),
                     dom: i,
                     type: "VIDEO"
                 });
@@ -3877,6 +4052,7 @@
                 result.push({
                     title,
                     username,
+                    uid: _extractUid(i),
                     dom: i,
                     type: "ARTICLE"
                 });
@@ -3892,7 +4068,7 @@
             }
             function getAllVideoContentInfo(pageType, doc) {
                 let homeList = [ getMonkeyVideo, getLiveVideo, getRankedVideo, getRecommendedVideo, getNormalVideo, getHomeArticle, getBananaVideo ];
-                let videoHomeList = [ getVideoHomeItem, getVideoHomeItem2, getVideoHomeRankItem, getSliderVideos ];
+                let videoHomeList = [ getVideoHomeItem, getVideoHomeItem2, getVideoHomeRankItem, getSliderVideos, getArticles ];
                 let articleHomeList = [ getArticles ];
                 let tasks = [];
                 if (pageType === "HOME") {
@@ -4564,6 +4740,7 @@
                 if (banButtonAnchor !== null) {
                     result.push({
                         username,
+                        uid: _extractUid(i),
                         nameAnchor: nameAnchor.parentNode,
                         banButtonAnchor,
                         dom: i
@@ -4582,6 +4759,7 @@
                 if (banButtonAnchor !== null) {
                     result.push({
                         username,
+                        uid: _extractUid(i),
                         nameAnchor,
                         banButtonAnchor,
                         dom: i
@@ -4719,7 +4897,7 @@
                         if (mutation.type === "childList") {
                             let targets = mutation.addedNodes;
                             targets.forEach((target => {
-                                if (target.tagName === "DIV" && (target.classList.contains("fc-comment-list") || target.classList.contains("ac-comment-hot-list") || target.classList.contains("ac-comment-root-list") || target.hasChildNodes() && typeof target.firstChild.classList !== "undefined" && (target.firstChild.classList.contains("area-comment-top") || target.firstChild.classList.contains("area-comment-sec")))) {
+                                if (target.tagName === "DIV" && (target.classList.contains("fc-comment-list") || target.classList.contains("ac-comment-hot-list") || target.classList.contains("ac-comment-root-list") || target.hasChildNodes() && typeof target.firstChild.classList !== "undefined" && (target.firstChild.classList.contains("area-comment-top") || target.firstChild.classList.contains("area-comment-sec")) || typeof target.querySelector === "function" && target.querySelector(".area-comment-first, .fc-comment-item") !== null)) {
                                     let cs = getCommentsData(target);
                                     js_event.emit("SHOW_COMMENT_TAGS", cs);
                                     attachDataUI(cs);
