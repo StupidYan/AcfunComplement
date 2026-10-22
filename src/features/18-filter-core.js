@@ -187,7 +187,7 @@
             if (banned) {
                 log_log("预加载后屏蔽条目：", contentObj.title);
                 _hideContent(contentObj);
-            } else {
+            } else if (!contentObj.hidden) {
                 _showContent(contentObj);
             }
         }
