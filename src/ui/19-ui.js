@@ -68,7 +68,10 @@
         }
         function injectStyle() {
             let doc = ui_unsafeWindow.document;
-            let str = "<style>" + style.Z[0][1] + "</style>";
+            let str = "<style>" + style.Z[0][1]
+                + "\n.realm-ban-btn{display:none}"
+                + "\n.from:hover .realm-ban-btn{display:inline}"
+                + "</style>";
             doc.head.insertAdjacentHTML("beforeend", str);
         }
         function loadHomeUI() {
