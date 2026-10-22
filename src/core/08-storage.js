@@ -19,6 +19,11 @@
                 callback(removeDuplicate(val));
             }));
         }
+        function _loadRealmBanList(callback) {
+            GM_get("ACFUN_BLOCK_REALMS", [], (val => {
+                callback(removeDuplicate(val));
+            }));
+        }
         function _loadBanList(callback, stringOnly = true) {
             GM_get("ACFUN_BLOCK_LIST", [], (list => {
                 list = removeDuplicate(list);
@@ -90,6 +95,9 @@
         }
         function _updateReplyBanList(d, callback) {
             GM_set("ACFUN_BLOCK_REPLIERS", d, callback);
+        }
+        function _updateRealmBanList(d, callback) {
+            GM_set("ACFUN_BLOCK_REALMS", d, callback);
         }
         function _loadBanUidList_simple(callback) {
             GM_get("ACFUN_BLOCK_LIST_UID", [], (val => {
@@ -339,7 +347,7 @@
             }));
         }
         function _loadGeneralSetting(callback) {
-            GM_get("GENERAL_SETTING", {
+            let defaults = {
                 showDeletedComment: true,
                 showUserTags: true,
                 showBanButton: true,
@@ -350,9 +358,11 @@
                 useBannedKeywordsList: false,
                 useBannedReplierList: false,
                 disableAnimation: false,
-                usePreload: true
-            }, (val => {
-                callback(val);
+                usePreload: true,
+                useRealmBlock: true
+            };
+            GM_get("GENERAL_SETTING", defaults, (val => {
+                callback(Object.assign({}, defaults, val || {}));
             }));
         }
         function _saveGeneralSetting(setting, callback) {
@@ -433,6 +443,33 @@
                 if (list.indexOf(username) < 0) {
                     list.push(username);
                     _updateReplyBanList(list, (() => {
+                        empty(callback)(list);
+                    }));
+                } else {
+                    empty(callback)(list);
+                }
+            }));
+        }
+        function _banRealm(realm, callback) {
+            realm = realm.trim();
+            _loadRealmBanList((list => {
+                if (list.indexOf(realm) < 0) {
+                    list.push(realm);
+                    _updateRealmBanList(list, (() => {
+                        empty(callback)(list);
+                    }));
+                } else {
+                    empty(callback)(list);
+                }
+            }));
+        }
+        function _unbanRealm(realm, callback) {
+            realm = realm.trim();
+            _loadRealmBanList((list => {
+                let i = list.indexOf(realm);
+                if (i >= 0) {
+                    list.splice(i, 1);
+                    _updateRealmBanList(list, (() => {
                         empty(callback)(list);
                     }));
                 } else {

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         AcfunBlock开源代码New
 // @namespace    http://tampermonkey.net/
-// @version      3.064
+// @version      3.065
 // @description  帮助你屏蔽不想看的UP主
 // @author       人文情怀
 // @exclude      https://www.acfun.cn/login/*

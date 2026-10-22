@@ -104,6 +104,26 @@
                 __webpack_require__.g["showMouseover"] = setting.showMouseover;
             }));
         }
+        function attachRealmBanButton(c) {
+            let from = c.dom.querySelector(".from");
+            if (from === null || from.querySelector(".realm-ban-btn") !== null) return;
+            let button = ui_unsafeWindow.document.createElement("span");
+            button.classList.add("realm-ban-btn");
+            button.innerText = "屏蔽";
+            button.title = "屏蔽来自这个板块的内容";
+            button.style.marginLeft = "6px";
+            button.style.color = "#fd4c5d";
+            button.style.cursor = "pointer";
+            button.addEventListener("click", (e => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (c.realm.length === 0) return;
+                js_data.banRealm(c.realm, (() => {
+                    js_event.emit("REALM_BAN_UPDATE", null);
+                }));
+            }));
+            from.appendChild(button);
+        }
         const ui = {
             loadUI(pageType) {
                 log_log("UI初始化");
@@ -119,6 +139,7 @@
                     loadArticleUI();
                 }
             },
+            attachRealmBanButton,
             attachBanButton(dom) {
                 let banButton = banButtonObj;
                 dom.addEventListener("pointermove", (e => {

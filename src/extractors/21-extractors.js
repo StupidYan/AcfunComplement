@@ -217,10 +217,19 @@
                 let title = t.innerText;
                 let t2 = i.querySelector("span.up a");
                 let username = t2.innerText.substring(3).trim();
+                let realmLink = i.querySelector(".from a");
+                let realm = realmLink === null ? "" : realmLink.innerText.trim();
+                let realmId = null;
+                if (realmLink !== null) {
+                    let realmMatch = /\/as(\d+)/.exec(realmLink.getAttribute("href"));
+                    if (realmMatch !== null) realmId = realmMatch[1];
+                }
                 result.push({
                     title,
                     username,
                     uid: _extractUid(i),
+                    realm,
+                    realmId,
                     dom: i,
                     type: "ARTICLE"
                 });
@@ -283,6 +292,7 @@
                         c.dom["contentData"] = c;
                         ui.attachBanButton(c.dom);
                     }
+                    ui.attachRealmBanButton(c);
                 }));
             }
             function bindEvents() {
@@ -290,6 +300,12 @@
                     refreshPageContent();
                 }));
                 js_event.on("KEYWORD_BAN_UPDATE", (() => {
+                    refreshPageContent();
+                }));
+                js_event.on("REALM_BAN_UPDATE", (() => {
+                    refreshPageContent();
+                }));
+                js_event.on("SETTING_CHANGE_useRealmBlock", (() => {
                     refreshPageContent();
                 }));
             }

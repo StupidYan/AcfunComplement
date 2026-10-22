@@ -243,39 +243,39 @@
             js_data.loadBanList((blist => {
                 js_data.loadUpUidList((uidlist => {
                     js_data.loadKeywords((klist => {
-                        let preloadTestList = [];
-                        contents.forEach((c => {
-                            let banned = false;
-                            if (c.uid && uidlist.indexOf(c.uid) >= 0 || blist && blist.indexOf && blist.indexOf(c.username) >= 0) {
-                                blist = blist.map((x => {
-                                    if (typeof x === "object") {
-                                        return x.item;
-                                    }
-                                    return x;
-                                }));
-                                _hideContent(c);
-                                banned = true;
-                            }
-                            if (klist && klist.indexOf) {
-                                klist.forEach((keyword => {
-                                    if (c.title.indexOf(keyword) >= 0) {
+                        js_data.loadRealmBanList((rlist => {
+                            js_data.loadGeneralSetting((setting => {
+                                let preloadTestList = [];
+                                contents.forEach((c => {
+                                    let banned = false;
+                                    if (c.uid && uidlist.indexOf(c.uid) >= 0 || blist && blist.indexOf && blist.indexOf(c.username) >= 0) {
                                         _hideContent(c);
                                         banned = true;
                                     }
+                                    if (klist && klist.indexOf) {
+                                        klist.forEach((keyword => {
+                                            if (c.title.indexOf(keyword) >= 0) {
+                                                _hideContent(c);
+                                                banned = true;
+                                            }
+                                        }));
+                                    }
+                                    if (setting.useRealmBlock && c.realm && rlist && rlist.indexOf(c.realm) >= 0) {
+                                        _hideContent(c);
+                                        banned = true;
+                                    }
+                                    if (!banned) {
+                                        _showContent(c);
+                                        if (c.type === "ARTICLE") preloadTestList.push(c);
+                                    }
                                 }));
-                            }
-                            if (!banned) {
-                                _showContent(c);
-                                if (c.type === "ARTICLE") preloadTestList.push(c);
-                            }
-                        }));
-                        js_data.loadGeneralSetting((setting => {
-                            if (setting.usePreload) {
-                                log_log("预加载测试中。。。");
-                                preloadTest(preloadTestList, klist);
-                            } else {
-                                log_log("预加载已关闭");
-                            }
+                                if (setting.usePreload) {
+                                    log_log("预加载测试中。。。");
+                                    preloadTest(preloadTestList, klist);
+                                } else {
+                                    log_log("预加载已关闭");
+                                }
+                            }));
                         }));
                     }));
                 }));

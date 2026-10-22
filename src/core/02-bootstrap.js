@@ -21,7 +21,7 @@
         function header() {
             return h();
         }
-        const version = "3.064";
+        const version = "3.065";
         let logFunc = console.log;
         let errorFunc = console.error;
         let warnFunc = console.warn;

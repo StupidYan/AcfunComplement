@@ -37,7 +37,8 @@
             let dictBan = {
                 up: [ "#ban_up_page", js_data.loadBanList, unbanUpButtonClick, js_data.banUser, "UP_BAN_UPDATE" ],
                 replier: [ "#ban_replier_page", js_data.loadReplyBanList, unbanReplierButtonClick, js_data.banReplier, "REPLY_BAN_UPDATE" ],
-                keyword: [ "#ban_keyword_page", js_data.loadKeywords, unbanKeywordButtonClick, js_data.banKeyword, "KEYWORD_BAN_UPDATE" ]
+                keyword: [ "#ban_keyword_page", js_data.loadKeywords, unbanKeywordButtonClick, js_data.banKeyword, "KEYWORD_BAN_UPDATE" ],
+                realm: [ "#ban_realm_page", js_data.loadRealmBanList, unbanRealmButtonClick, js_data.banRealm, "REALM_BAN_UPDATE" ]
             };
             let opt = dictBan[listName];
             opt[1]((list => {
@@ -111,6 +112,13 @@
             }
             showBannedList(dom, "keyword");
         }
+        function updateBannedRealmsList(dom) {
+            if (typeof dom === "undefined") {
+                let doc = setting_ui_unsafeWindow.document;
+                dom = doc.body.querySelector("#helperUI");
+            }
+            showBannedList(dom, "realm");
+        }
         function unbanUpButtonClick(username) {
             js_data.unbanUser(username, (banlist => {
                 js_event.emit("UP_BAN_UPDATE", banlist);
@@ -124,6 +132,11 @@
         function unbanKeywordButtonClick(keyword) {
             js_data.unbanKeyword(keyword, (banlist => {
                 js_event.emit("KEYWORD_BAN_UPDATE", banlist);
+            }));
+        }
+        function unbanRealmButtonClick(realm) {
+            js_data.unbanRealm(realm, (banlist => {
+                js_event.emit("REALM_BAN_UPDATE", banlist);
             }));
         }
         function _changeSetting(key, val, callback) {
@@ -153,6 +166,7 @@
                 bannedAuthours: [ "#ban_up_page" ],
                 bannedRepliers: [ "#ban_replier_page" ],
                 bannedKeywords: [ "#ban_keyword_page" ],
+                bannedRealms: [ "#ban_realm_page" ],
                 preloadSetting: [ "#preload_page" ],
                 cloudsync: [ "#cloudsync_page" ],
                 commentRecovery: [ "#recovery_page" ],
@@ -212,6 +226,9 @@
             js_event.on("KEYWORD_BAN_UPDATE", (() => {
                 updateBannedKeywordsList();
             }));
+            js_event.on("REALM_BAN_UPDATE", (() => {
+                updateBannedRealmsList();
+            }));
             js_event.on("SYNC_TIME_UPDATE", (() => {
                 refreshSyncTime(dom);
             }));
@@ -244,6 +261,9 @@
             lookupCacheBtn.addEventListener("click", (() => {
                 let username = dom.querySelector(".lookup-cache-input").value;
                 js_event.emit("LOOKUP", username);
+            }));
+            js_event.on("SETTING_CHANGE_useRealmBlock", (val => {
+                updateBannedRealmsList();
             }));
             js_event.on("SETTING_CHANGE_useBannedUpRankList", (val => {
                 updateBannedUpList();
@@ -326,6 +346,7 @@
             updateBannedUpList(dom);
             updateBannedReplierList(dom);
             updateBannedKeywordsList(dom);
+            updateBannedRealmsList(dom);
             log_log("载入屏蔽列表");
             initButtons(dom);
             setting_ui_version(dom);

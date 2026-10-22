@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         AcfunBlock开源代码New
 // @namespace    http://tampermonkey.net/
-// @version      3.064
+// @version      3.065
 // @description  帮助你屏蔽不想看的UP主
 // @author       人文情怀
 // @exclude      https://www.acfun.cn/login/*
@@ -247,7 +247,7 @@
         function header() {
             return h();
         }
-        const version = "3.064";
+        const version = "3.065";
         let logFunc = console.log;
         let errorFunc = console.error;
         let warnFunc = console.warn;
@@ -731,6 +731,11 @@
                 callback(removeDuplicate(val));
             }));
         }
+        function _loadRealmBanList(callback) {
+            GM_get("ACFUN_BLOCK_REALMS", [], (val => {
+                callback(removeDuplicate(val));
+            }));
+        }
         function _loadBanList(callback, stringOnly = true) {
             GM_get("ACFUN_BLOCK_LIST", [], (list => {
                 list = removeDuplicate(list);
@@ -802,6 +807,9 @@
         }
         function _updateReplyBanList(d, callback) {
             GM_set("ACFUN_BLOCK_REPLIERS", d, callback);
+        }
+        function _updateRealmBanList(d, callback) {
+            GM_set("ACFUN_BLOCK_REALMS", d, callback);
         }
         function _loadBanUidList_simple(callback) {
             GM_get("ACFUN_BLOCK_LIST_UID", [], (val => {
@@ -1051,7 +1059,7 @@
             }));
         }
         function _loadGeneralSetting(callback) {
-            GM_get("GENERAL_SETTING", {
+            let defaults = {
                 showDeletedComment: true,
                 showUserTags: true,
                 showBanButton: true,
@@ -1062,9 +1070,11 @@
                 useBannedKeywordsList: false,
                 useBannedReplierList: false,
                 disableAnimation: false,
-                usePreload: true
-            }, (val => {
-                callback(val);
+                usePreload: true,
+                useRealmBlock: true
+            };
+            GM_get("GENERAL_SETTING", defaults, (val => {
+                callback(Object.assign({}, defaults, val || {}));
             }));
         }
         function _saveGeneralSetting(setting, callback) {
@@ -1152,6 +1162,33 @@
                 }
             }));
         }
+        function _banRealm(realm, callback) {
+            realm = realm.trim();
+            _loadRealmBanList((list => {
+                if (list.indexOf(realm) < 0) {
+                    list.push(realm);
+                    _updateRealmBanList(list, (() => {
+                        empty(callback)(list);
+                    }));
+                } else {
+                    empty(callback)(list);
+                }
+            }));
+        }
+        function _unbanRealm(realm, callback) {
+            realm = realm.trim();
+            _loadRealmBanList((list => {
+                let i = list.indexOf(realm);
+                if (i >= 0) {
+                    list.splice(i, 1);
+                    _updateRealmBanList(list, (() => {
+                        empty(callback)(list);
+                    }));
+                } else {
+                    empty(callback)(list);
+                }
+            }));
+        }
         const js_data = {
             version,
             loadRankingData: _loadRankingData,
@@ -1163,6 +1200,7 @@
             loadBanList: _loadBanList,
             loadReplyBanList: _loadReplyBanList,
             loadKeywords: _loadKeywords,
+            loadRealmBanList: _loadRealmBanList,
             copyRankBanLish: callback => {
                 function addFunc(list) {
                     if (list.length > 0) {
@@ -1284,6 +1322,8 @@
                 }));
             },
             banKeyword: _banKeyword,
+            banRealm: _banRealm,
+            unbanRealm: _unbanRealm,
             unbanKeyword(w, callback) {
                 w = w.trim();
                 _loadKeywords_simple((ws => {
@@ -1518,7 +1558,7 @@
             }
         }
         var style = __webpack_require__(547);
-        var code = '<div id="helperUI" class="helper-wrap" style="pointer-events:none"> <div class="helper-wrap-inner"> <div style="pointer-events:all" class="helper-main c-a ui-hidden smooth"> <div class="plugin-hint" id="hide_hint">隐藏插件--\x3e</div> <div class="page-wrap"> <div class="plugin-menu-title">插件设置</div> <div class="menu-wrap"> <div class="menu-column"> <a id="bannedAuthours">Ｕ Ｐ 主</a> <a id="bannedRepliers">回 复 者</a> <a id="bannedKeywords">关 键 词</a> <a id="preloadSetting">预 加 载</a> <a id="commentRecovery">评论恢复</a> </div> <div class="menu-column"> <a id="cloudsync">云 同 步</a> <a id="generalSetting">通用设置</a> <a id="sharedRankList">屏蔽排名</a> <a id="aboutme">关于插件</a> <a href="https://baldhumanity.top/acfun">网站主页</a> </div> </div> <div class="plugin-downloader-version">0.00</div> <div class="plugin-version">0.00</div> <div class="plugin-author">作恶者：<a href="https://message.acfun.cn/im?targetId=690324" style="color:#00f">人文情怀</a></div> </div> <div class="page-wrap inactive-page" id="ban_up_page"> <a class="go-back">返回</a> <div class="plugin-add-ban-up"> <input class="ban-title-input" type="text" maxlength="16" placeholder="输入UP主名字..."/> <input class="ban-item-submit" type="button" value="屏蔽"> </div> <div class="banned-items"> <div class="banned-item"> <span class="banned-title">我是名字</span> <button>×</button> </div> </div> </div> <div class="page-wrap inactive-page" id="ban_replier_page"> <a class="go-back">返回</a> <div class="plugin-add-ban-up"> <input class="ban-title-input" type="text" maxlength="16" placeholder="输入评论者名字..."/> <input class="ban-item-submit" type="button" value="屏蔽"> </div> <div class="banned-items"> <div class="banned-item"> <span class="banned-title">我是名字</span> <button>×</button> </div> </div> </div> <div class="page-wrap inactive-page" id="ban_keyword_page"> <a class="go-back">返回</a> <div class="plugin-add-ban-up"> <input class="ban-title-input" type="text" maxlength="16" placeholder="输入屏蔽关键词..."/> <input class="ban-item-submit" type="button" value="屏蔽"> </div> <div class="banned-items"> <div class="banned-item"> <span class="banned-title">LOL</span> <button>×</button> </div> </div> </div> <div class="page-wrap inactive-page" id="cloudsync_page"> <a class="go-back">返回</a> <div class="about-page-content"> <div class="cloud-description"> 插件会上传你的屏蔽列表，只要安装插件的浏览器，登录同一个AC帐号都可以同步屏蔽。 </div> <div class="sync-time"></div> <hr> <div> <button id="syncNow">立即同步</button> </div> </div> </div> <div class="page-wrap inactive-page" id="preload_page"> <a class="go-back">返回</a> <div class="about-page-content"> <div class="cloud-description"> <b>文章区预加载。</b><br/> <label class="cc-container" data-id="usePreload">启用预加载 <input type="checkbox" checked="checked"> <span class="checkmark"></span> </label> 插件将自动下载主页文章文章内容，检查内部文字，如果包含你屏蔽的关键词，将会在你打开文章之前在主页屏蔽文章。<br/> </div> <hr> <div> <div style="width:100%"><button id="clearPreloadCache">清除缓存</button></div> <div id="clearCacheInfo"></div> </div> </div> </div> <div class="page-wrap inactive-page" id="recovery_page"> <a class="go-back">返回</a> <div class="about-page-content" style="float:none"> <div class="no-float"> 3.000版本新功能：查看已删除评论！<br/> 插件将备份所有你浏览过的投稿的评论。并且在其他人请求时，共享出去。<br/> 只要越多人用插件，评论恢复的几率就越高。<br/> </div> <hr> <div class="no-float"> <b><span class="cache-info"></span></b> <button id="delete_cache">删除缓存</button> </div> <hr> <div class="no-float"> <label>被删评论查询<input type="text" placeholder="输入评论家ID..." class="lookup-cache-input" id="lookup_cache_input"></label> <button id="lookup_cache">查询</button> </div> </div> </div> <div class="page-wrap inactive-page" id="general_page"> <a class="go-back">返回</a> <div class="about-page-content"> <div> <label class="cc-container" data-id="showBanButton">在首页的投稿右上角显示[屏蔽]图标按钮 <input type="checkbox" checked="checked"> <span class="checkmark"></span> </label> <label class="cc-container" data-id="showMouseover">在首页鼠标悬停被屏蔽投稿，将显示内容 <input type="checkbox" checked="checked"> <span class="checkmark"></span> </label> <label class="cc-container" data-id="autoSync">自动云同步所有列表 <input type="checkbox" checked="checked"> <span class="checkmark"></span> </label> <label class="cc-container" data-id="showDeletedComment">显示投稿内被删除评论 <input type="checkbox" checked="checked"> <span class="checkmark"></span> </label> <label class="cc-container" data-id="showUserTags">显示评论用户标签 <input type="checkbox" checked="checked"> <span class="checkmark"></span> </label> <label class="cc-container" data-id="showBanStatusTag">显示投稿页左侧屏蔽状态 <input type="checkbox" checked="checked"> <span class="checkmark"></span> </label> <label class="cc-container" data-id="disableAnimation">禁止评论区动画 <input type="checkbox" checked="checked"> <span class="checkmark"></span> </label> </div> </div> </div> <div class="page-wrap inactive-page" id="sharedRankList_page"> <a class="go-back">返回</a> <div class="about-page-content"> <div style="float:none"> <label class="cc-container" data-id="useBannedUpRankList">屏蔽排行榜上UP <input type="checkbox" checked="checked"> <span class="checkmark"></span> <br> <a id="copy_uprank">复制到我的列表</a> </label> </div> <div style="float:none"> <label class="cc-container" data-id="useBannedKeywordsList">屏蔽排行榜上关键词 <input type="checkbox" checked="checked"> <span class="checkmark"></span> <br> <a id="copy_keywordrank">复制到我的列表</a> </label> </div> <div style="float:none"> <label class="cc-container" data-id="useBannedReplierList">屏蔽排行榜上评论家 <input type="checkbox" checked="checked"> <span class="checkmark"></span> <br> <a id="copy_replierrank">复制到我的列表</a> </label> </div> <div style="float:none"> <a href="https://baldhumanity.top/acfun/ranking.html" style="color:#00008b">点击这里查看排行榜</a> </div> </div> </div> <div class="page-wrap inactive-page" id="about_page"> <a class="go-back">返回</a> <div class="about-page-content"> 本插件持续更新中：） 只要我有空。 </div> </div> </div> <div style="pointer-events:all" class="ac-girl ac-girl-hide smooth"> </div> </div> </div>';
+        var code = '<div id="helperUI" class="helper-wrap" style="pointer-events:none"> <div class="helper-wrap-inner"> <div style="pointer-events:all" class="helper-main c-a ui-hidden smooth"> <div class="plugin-hint" id="hide_hint">隐藏插件--\x3e</div> <div class="page-wrap"> <div class="plugin-menu-title">插件设置</div> <div class="menu-wrap"> <div class="menu-column"> <a id="bannedAuthours">Ｕ Ｐ 主</a> <a id="bannedRepliers">回 复 者</a> <a id="bannedKeywords">关 键 词</a> <a id="bannedRealms">板　块</a> <a id="preloadSetting">预 加 载</a> <a id="commentRecovery">评论恢复</a> </div> <div class="menu-column"> <a id="cloudsync">云 同 步</a> <a id="generalSetting">通用设置</a> <a id="sharedRankList">屏蔽排名</a> <a id="aboutme">关于插件</a> <a href="https://baldhumanity.top/acfun">网站主页</a> </div> </div> <div class="plugin-downloader-version">0.00</div> <div class="plugin-version">0.00</div> <div class="plugin-author">作恶者：<a href="https://message.acfun.cn/im?targetId=690324" style="color:#00f">人文情怀</a></div> </div> <div class="page-wrap inactive-page" id="ban_up_page"> <a class="go-back">返回</a> <div class="plugin-add-ban-up"> <input class="ban-title-input" type="text" maxlength="16" placeholder="输入UP主名字..."/> <input class="ban-item-submit" type="button" value="屏蔽"> </div> <div class="banned-items"> <div class="banned-item"> <span class="banned-title">我是名字</span> <button>×</button> </div> </div> </div> <div class="page-wrap inactive-page" id="ban_replier_page"> <a class="go-back">返回</a> <div class="plugin-add-ban-up"> <input class="ban-title-input" type="text" maxlength="16" placeholder="输入评论者名字..."/> <input class="ban-item-submit" type="button" value="屏蔽"> </div> <div class="banned-items"> <div class="banned-item"> <span class="banned-title">我是名字</span> <button>×</button> </div> </div> </div> <div class="page-wrap inactive-page" id="ban_keyword_page"> <a class="go-back">返回</a> <div class="plugin-add-ban-up"> <input class="ban-title-input" type="text" maxlength="16" placeholder="输入屏蔽关键词..."/> <input class="ban-item-submit" type="button" value="屏蔽"> </div> <div class="banned-items"> <div class="banned-item"> <span class="banned-title">LOL</span> <button>×</button> </div> </div> </div> <div class="page-wrap inactive-page" id="ban_realm_page"> <a class="go-back">返回</a> <div class="plugin-add-ban-up"> <input class="ban-title-input" type="text" maxlength="32" placeholder="输入板块名称..."/> <input class="ban-item-submit" type="button" value="屏蔽"> </div> <div class="banned-items"> <div class="banned-item"> <span class="banned-title">原创画作</span> <button>×</button> </div> </div> </div> <div class="page-wrap inactive-page" id="cloudsync_page"> <a class="go-back">返回</a> <div class="about-page-content"> <div class="cloud-description"> 插件会上传你的屏蔽列表，只要安装插件的浏览器，登录同一个AC帐号都可以同步屏蔽。 </div> <div class="sync-time"></div> <hr> <div> <button id="syncNow">立即同步</button> </div> </div> </div> <div class="page-wrap inactive-page" id="preload_page"> <a class="go-back">返回</a> <div class="about-page-content"> <div class="cloud-description"> <b>文章区预加载。</b><br/> <label class="cc-container" data-id="usePreload">启用预加载 <input type="checkbox" checked="checked"> <span class="checkmark"></span> </label> 插件将自动下载主页文章文章内容，检查内部文字，如果包含你屏蔽的关键词，将会在你打开文章之前在主页屏蔽文章。<br/> </div> <hr> <div> <div style="width:100%"><button id="clearPreloadCache">清除缓存</button></div> <div id="clearCacheInfo"></div> </div> </div> </div> <div class="page-wrap inactive-page" id="recovery_page"> <a class="go-back">返回</a> <div class="about-page-content" style="float:none"> <div class="no-float"> 3.000版本新功能：查看已删除评论！<br/> 插件将备份所有你浏览过的投稿的评论。并且在其他人请求时，共享出去。<br/> 只要越多人用插件，评论恢复的几率就越高。<br/> </div> <hr> <div class="no-float"> <b><span class="cache-info"></span></b> <button id="delete_cache">删除缓存</button> </div> <hr> <div class="no-float"> <label>被删评论查询<input type="text" placeholder="输入评论家ID..." class="lookup-cache-input" id="lookup_cache_input"></label> <button id="lookup_cache">查询</button> </div> </div> </div> <div class="page-wrap inactive-page" id="general_page"> <a class="go-back">返回</a> <div class="about-page-content"> <div> <label class="cc-container" data-id="showBanButton">在首页的投稿右上角显示[屏蔽]图标按钮 <input type="checkbox" checked="checked"> <span class="checkmark"></span> </label> <label class="cc-container" data-id="useRealmBlock">启用板块屏蔽 <input type="checkbox" checked="checked"> <span class="checkmark"></span> </label> <label class="cc-container" data-id="showMouseover">在首页鼠标悬停被屏蔽投稿，将显示内容 <input type="checkbox" checked="checked"> <span class="checkmark"></span> </label> <label class="cc-container" data-id="autoSync">自动云同步所有列表 <input type="checkbox" checked="checked"> <span class="checkmark"></span> </label> <label class="cc-container" data-id="showDeletedComment">显示投稿内被删除评论 <input type="checkbox" checked="checked"> <span class="checkmark"></span> </label> <label class="cc-container" data-id="showUserTags">显示评论用户标签 <input type="checkbox" checked="checked"> <span class="checkmark"></span> </label> <label class="cc-container" data-id="showBanStatusTag">显示投稿页左侧屏蔽状态 <input type="checkbox" checked="checked"> <span class="checkmark"></span> </label> <label class="cc-container" data-id="disableAnimation">禁止评论区动画 <input type="checkbox" checked="checked"> <span class="checkmark"></span> </label> </div> </div> </div> <div class="page-wrap inactive-page" id="sharedRankList_page"> <a class="go-back">返回</a> <div class="about-page-content"> <div style="float:none"> <label class="cc-container" data-id="useBannedUpRankList">屏蔽排行榜上UP <input type="checkbox" checked="checked"> <span class="checkmark"></span> <br> <a id="copy_uprank">复制到我的列表</a> </label> </div> <div style="float:none"> <label class="cc-container" data-id="useBannedKeywordsList">屏蔽排行榜上关键词 <input type="checkbox" checked="checked"> <span class="checkmark"></span> <br> <a id="copy_keywordrank">复制到我的列表</a> </label> </div> <div style="float:none"> <label class="cc-container" data-id="useBannedReplierList">屏蔽排行榜上评论家 <input type="checkbox" checked="checked"> <span class="checkmark"></span> <br> <a id="copy_replierrank">复制到我的列表</a> </label> </div> <div style="float:none"> <a href="https://baldhumanity.top/acfun/ranking.html" style="color:#00008b">点击这里查看排行榜</a> </div> </div> </div> <div class="page-wrap inactive-page" id="about_page"> <a class="go-back">返回</a> <div class="about-page-content"> 本插件持续更新中：） 只要我有空。 </div> </div> </div> <div style="pointer-events:all" class="ac-girl ac-girl-hide smooth"> </div> </div> </div>';
         const mainUI = code;
         function _getStorage() {
             if (typeof __webpack_require__.g["eventStorage"] === "undefined") {
@@ -2898,7 +2938,8 @@
             let dictBan = {
                 up: [ "#ban_up_page", js_data.loadBanList, unbanUpButtonClick, js_data.banUser, "UP_BAN_UPDATE" ],
                 replier: [ "#ban_replier_page", js_data.loadReplyBanList, unbanReplierButtonClick, js_data.banReplier, "REPLY_BAN_UPDATE" ],
-                keyword: [ "#ban_keyword_page", js_data.loadKeywords, unbanKeywordButtonClick, js_data.banKeyword, "KEYWORD_BAN_UPDATE" ]
+                keyword: [ "#ban_keyword_page", js_data.loadKeywords, unbanKeywordButtonClick, js_data.banKeyword, "KEYWORD_BAN_UPDATE" ],
+                realm: [ "#ban_realm_page", js_data.loadRealmBanList, unbanRealmButtonClick, js_data.banRealm, "REALM_BAN_UPDATE" ]
             };
             let opt = dictBan[listName];
             opt[1]((list => {
@@ -2972,6 +3013,13 @@
             }
             showBannedList(dom, "keyword");
         }
+        function updateBannedRealmsList(dom) {
+            if (typeof dom === "undefined") {
+                let doc = setting_ui_unsafeWindow.document;
+                dom = doc.body.querySelector("#helperUI");
+            }
+            showBannedList(dom, "realm");
+        }
         function unbanUpButtonClick(username) {
             js_data.unbanUser(username, (banlist => {
                 js_event.emit("UP_BAN_UPDATE", banlist);
@@ -2985,6 +3033,11 @@
         function unbanKeywordButtonClick(keyword) {
             js_data.unbanKeyword(keyword, (banlist => {
                 js_event.emit("KEYWORD_BAN_UPDATE", banlist);
+            }));
+        }
+        function unbanRealmButtonClick(realm) {
+            js_data.unbanRealm(realm, (banlist => {
+                js_event.emit("REALM_BAN_UPDATE", banlist);
             }));
         }
         function _changeSetting(key, val, callback) {
@@ -3014,6 +3067,7 @@
                 bannedAuthours: [ "#ban_up_page" ],
                 bannedRepliers: [ "#ban_replier_page" ],
                 bannedKeywords: [ "#ban_keyword_page" ],
+                bannedRealms: [ "#ban_realm_page" ],
                 preloadSetting: [ "#preload_page" ],
                 cloudsync: [ "#cloudsync_page" ],
                 commentRecovery: [ "#recovery_page" ],
@@ -3073,6 +3127,9 @@
             js_event.on("KEYWORD_BAN_UPDATE", (() => {
                 updateBannedKeywordsList();
             }));
+            js_event.on("REALM_BAN_UPDATE", (() => {
+                updateBannedRealmsList();
+            }));
             js_event.on("SYNC_TIME_UPDATE", (() => {
                 refreshSyncTime(dom);
             }));
@@ -3105,6 +3162,9 @@
             lookupCacheBtn.addEventListener("click", (() => {
                 let username = dom.querySelector(".lookup-cache-input").value;
                 js_event.emit("LOOKUP", username);
+            }));
+            js_event.on("SETTING_CHANGE_useRealmBlock", (val => {
+                updateBannedRealmsList();
             }));
             js_event.on("SETTING_CHANGE_useBannedUpRankList", (val => {
                 updateBannedUpList();
@@ -3187,6 +3247,7 @@
             updateBannedUpList(dom);
             updateBannedReplierList(dom);
             updateBannedKeywordsList(dom);
+            updateBannedRealmsList(dom);
             log_log("载入屏蔽列表");
             initButtons(dom);
             setting_ui_version(dom);
@@ -3564,39 +3625,39 @@
             js_data.loadBanList((blist => {
                 js_data.loadUpUidList((uidlist => {
                     js_data.loadKeywords((klist => {
-                        let preloadTestList = [];
-                        contents.forEach((c => {
-                            let banned = false;
-                            if (c.uid && uidlist.indexOf(c.uid) >= 0 || blist && blist.indexOf && blist.indexOf(c.username) >= 0) {
-                                blist = blist.map((x => {
-                                    if (typeof x === "object") {
-                                        return x.item;
-                                    }
-                                    return x;
-                                }));
-                                _hideContent(c);
-                                banned = true;
-                            }
-                            if (klist && klist.indexOf) {
-                                klist.forEach((keyword => {
-                                    if (c.title.indexOf(keyword) >= 0) {
+                        js_data.loadRealmBanList((rlist => {
+                            js_data.loadGeneralSetting((setting => {
+                                let preloadTestList = [];
+                                contents.forEach((c => {
+                                    let banned = false;
+                                    if (c.uid && uidlist.indexOf(c.uid) >= 0 || blist && blist.indexOf && blist.indexOf(c.username) >= 0) {
                                         _hideContent(c);
                                         banned = true;
                                     }
+                                    if (klist && klist.indexOf) {
+                                        klist.forEach((keyword => {
+                                            if (c.title.indexOf(keyword) >= 0) {
+                                                _hideContent(c);
+                                                banned = true;
+                                            }
+                                        }));
+                                    }
+                                    if (setting.useRealmBlock && c.realm && rlist && rlist.indexOf(c.realm) >= 0) {
+                                        _hideContent(c);
+                                        banned = true;
+                                    }
+                                    if (!banned) {
+                                        _showContent(c);
+                                        if (c.type === "ARTICLE") preloadTestList.push(c);
+                                    }
                                 }));
-                            }
-                            if (!banned) {
-                                _showContent(c);
-                                if (c.type === "ARTICLE") preloadTestList.push(c);
-                            }
-                        }));
-                        js_data.loadGeneralSetting((setting => {
-                            if (setting.usePreload) {
-                                log_log("预加载测试中。。。");
-                                preloadTest(preloadTestList, klist);
-                            } else {
-                                log_log("预加载已关闭");
-                            }
+                                if (setting.usePreload) {
+                                    log_log("预加载测试中。。。");
+                                    preloadTest(preloadTestList, klist);
+                                } else {
+                                    log_log("预加载已关闭");
+                                }
+                            }));
                         }));
                     }));
                 }));
@@ -3708,6 +3769,26 @@
                 __webpack_require__.g["showMouseover"] = setting.showMouseover;
             }));
         }
+        function attachRealmBanButton(c) {
+            let from = c.dom.querySelector(".from");
+            if (from === null || from.querySelector(".realm-ban-btn") !== null) return;
+            let button = ui_unsafeWindow.document.createElement("span");
+            button.classList.add("realm-ban-btn");
+            button.innerText = "屏蔽";
+            button.title = "屏蔽来自这个板块的内容";
+            button.style.marginLeft = "6px";
+            button.style.color = "#fd4c5d";
+            button.style.cursor = "pointer";
+            button.addEventListener("click", (e => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (c.realm.length === 0) return;
+                js_data.banRealm(c.realm, (() => {
+                    js_event.emit("REALM_BAN_UPDATE", null);
+                }));
+            }));
+            from.appendChild(button);
+        }
         const ui = {
             loadUI(pageType) {
                 log_log("UI初始化");
@@ -3723,6 +3804,7 @@
                     loadArticleUI();
                 }
             },
+            attachRealmBanButton,
             attachBanButton(dom) {
                 let banButton = banButtonObj;
                 dom.addEventListener("pointermove", (e => {
@@ -4049,10 +4131,19 @@
                 let title = t.innerText;
                 let t2 = i.querySelector("span.up a");
                 let username = t2.innerText.substring(3).trim();
+                let realmLink = i.querySelector(".from a");
+                let realm = realmLink === null ? "" : realmLink.innerText.trim();
+                let realmId = null;
+                if (realmLink !== null) {
+                    let realmMatch = /\/as(\d+)/.exec(realmLink.getAttribute("href"));
+                    if (realmMatch !== null) realmId = realmMatch[1];
+                }
                 result.push({
                     title,
                     username,
                     uid: _extractUid(i),
+                    realm,
+                    realmId,
                     dom: i,
                     type: "ARTICLE"
                 });
@@ -4115,6 +4206,7 @@
                         c.dom["contentData"] = c;
                         ui.attachBanButton(c.dom);
                     }
+                    ui.attachRealmBanButton(c);
                 }));
             }
             function bindEvents() {
@@ -4122,6 +4214,12 @@
                     refreshPageContent();
                 }));
                 js_event.on("KEYWORD_BAN_UPDATE", (() => {
+                    refreshPageContent();
+                }));
+                js_event.on("REALM_BAN_UPDATE", (() => {
+                    refreshPageContent();
+                }));
+                js_event.on("SETTING_CHANGE_useRealmBlock", (() => {
                     refreshPageContent();
                 }));
             }

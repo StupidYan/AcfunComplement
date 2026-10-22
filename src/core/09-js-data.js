@@ -9,6 +9,7 @@
             loadBanList: _loadBanList,
             loadReplyBanList: _loadReplyBanList,
             loadKeywords: _loadKeywords,
+            loadRealmBanList: _loadRealmBanList,
             copyRankBanLish: callback => {
                 function addFunc(list) {
                     if (list.length > 0) {
@@ -130,6 +131,8 @@
                 }));
             },
             banKeyword: _banKeyword,
+            banRealm: _banRealm,
+            unbanRealm: _unbanRealm,
             unbanKeyword(w, callback) {
                 w = w.trim();
                 _loadKeywords_simple((ws => {
